@@ -74,8 +74,6 @@ if args.cuda:
 train_start,  valid_start, test_start = \
         0, int(N * args.train_ratio / 100), int(N * (args.train_ratio + args.valid_ratio) / 100)
 
-#train_loader = DataLoader(influence_dataset, batch_size=args.batch,
-#                        sampler=ChunkSampler(valid_start - train_start, 0))
 
 train_end = valid_start-1
 each_data_size = int(train_end // args.client_num)
@@ -134,21 +132,9 @@ elif args.model == "gat":
 else:
     raise NotImplementedError
 
-#server = Server(model = s_model,client_list = client_list,args = args,device = device)
-server = Server(model = client_list[0].model,client_list = client_list,args = args,device = device)
+server = Server(model = s_model,client_list = client_list,args = args,device = device)
 
-for name, param in server.model.named_parameters():
-	print(name, '      ', param.size())
-# print('----------------')
-# for i in range(args.client_num):
-#     for name, param in client_list[i].model.named_parameters():
-#         print(name, '      ', param.size())
-# print(server.model.state_dict()['layer_stack.1.w'])
-# print('&&&&&&&&&&&&&&&& this is client para')
-# for i,client in enumerate(client_list):
-#     print('this is {} client' .format(i))
-#     print(client.model.state_dict()['layer_stack.1.w'])
-#     print('!!!!!!!!!!!!!!')
+
 
 # Train model
 t_total = time.time()
@@ -156,11 +142,11 @@ logger.info("training...")
 
 #federated learning training
 for round in range(args.round):
-    global_para = server.broadcast_parameters()  #服务器广播当前网络模型
+    global_para = server.broadcast_parameters() 
     #clients training
     for index, client in enumerate(client_list):
-        client.download_parameters(global_para) #客户端下载全局模型，并更新本地模型
-        client.train(class_weight=class_weight,round=round) #客户端训练本地模型
+        client.download_parameters(global_para) 
+        client.train(class_weight=class_weight,round=round) 
     logger.info("communication round %d client training is finished!", round)  
 
     #server update
@@ -180,6 +166,6 @@ best_thr = server.evaluate(dataloader = valid_loader, class_weight=class_weight,
 # Testing
 logger.info("testing...")
 server.evaluate(dataloader = test_loader, class_weight=class_weight,round = args.round, thr=best_thr, log_desc='test_')
-#server.evaluate(dataloader = test_loader, class_weight=class_weight, thr=-0.5)
+
 
 
